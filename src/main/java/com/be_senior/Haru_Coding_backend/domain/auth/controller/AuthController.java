@@ -35,6 +35,12 @@ public class AuthController {
         return ApiResponse.success(authService.login(dto));
     }
 
+    @PostMapping("/refresh")
+    public ApiResponse<LoginResponse> refresh(@RequestHeader("Authorization") String token) {
+        String refreshToken = token.replace("Bearer ", "");
+        return ApiResponse.success(authService.refresh(refreshToken));
+    }
+
     @PostMapping("/logout")
     public ApiResponse<Void> logout(@RequestHeader("Authorization") String token) {
         String accessToken = token.replace("Bearer ", "");

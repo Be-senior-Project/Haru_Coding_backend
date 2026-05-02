@@ -78,6 +78,21 @@ public class AuthService {
     }
 
     @Transactional
+    public LoginResponse refresh(String refreshToken) {
+        RefreshTokenEntity tokenEntity = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN));
+
+        if (tokenEntity.isExpired()) {
+            throw new CustomException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        UserEntity user = userRepository.findById(tokenEntity.getUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        return issueTokens(user);
+    }
+
+    @Transactional
     public void logout(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }
