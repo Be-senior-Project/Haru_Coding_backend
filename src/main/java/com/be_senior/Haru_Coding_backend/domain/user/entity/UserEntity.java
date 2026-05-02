@@ -19,11 +19,13 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String googleId;
 
     @Column(nullable = false)
     private String email;
+
+    private String password;
 
     private String nickname;
 
@@ -48,9 +50,10 @@ public class UserEntity {
     private LocalDateTime updatedAt;
 
     @Builder
-    public UserEntity(String googleId, String email, String nickname, String profileImageUrl, String fcmToken) {
+    public UserEntity(String googleId, String email, String password, String nickname, String profileImageUrl, String fcmToken) {
         this.googleId = googleId;
         this.email = email;
+        this.password = password;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
         this.fcmToken = fcmToken;
