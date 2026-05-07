@@ -1,8 +1,8 @@
 package com.be_senior.Haru_Coding_backend.domain.auth.service;
 
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginDto;
+import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginRequest;
 import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginResponse;
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.SignupDto;
+import com.be_senior.Haru_Coding_backend.domain.auth.dto.SignupRequest;
 import com.be_senior.Haru_Coding_backend.domain.auth.entity.RefreshTokenEntity;
 import com.be_senior.Haru_Coding_backend.domain.auth.repository.RefreshTokenRepository;
 import com.be_senior.Haru_Coding_backend.domain.auth.service.GoogleTokenVerifier.GoogleUserInfo;
@@ -46,7 +46,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse signup(SignupDto dto) {
+    public LoginResponse signup(SignupRequest dto) {
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
@@ -66,7 +66,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse login(LoginDto dto) {
+    public LoginResponse login(LoginRequest dto) {
         UserEntity user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
