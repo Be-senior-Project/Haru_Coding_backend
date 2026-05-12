@@ -1,6 +1,6 @@
-package com.be_senior.Haru_Coding_backend.domain.user.repository;
+package com.be_senior.Haru_Coding_backend.repository;
 
-import com.be_senior.Haru_Coding_backend.domain.user.entity.UserEntity;
+import com.be_senior.Haru_Coding_backend.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

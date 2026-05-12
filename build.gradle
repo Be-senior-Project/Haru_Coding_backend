@@ -40,9 +40,12 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 
 	// LangChain4j, openAI, vectorDB 의존성
-	implementation 'dev.langchain4j:langchain4j-spring-boot-starter:1.0.1'
-	implementation 'dev.langchain4j:langchain4j-open-ai:1.0.1'
-	implementation 'dev.langchain4j:langchain4j-pgvector:1.0.1'
+//	implementation 'dev.langchain4j:langchain4j-spring-boot-starter:1.0.1'
+//	implementation 'dev.langchain4j:langchain4j-open-ai:1.0.1'
+//	implementation 'dev.langchain4j:langchain4j-pgvector:1.0.1'
+	implementation 'dev.langchain4j:langchain4j-spring-boot-starter:0.36.2'
+	implementation 'dev.langchain4j:langchain4j-open-ai:0.36.2'
+	implementation 'dev.langchain4j:langchain4j-pgvector:0.36.2'
 }
 
 tasks.named('test') {

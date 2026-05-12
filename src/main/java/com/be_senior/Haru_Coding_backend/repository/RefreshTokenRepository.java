@@ -1,6 +1,6 @@
-package com.be_senior.Haru_Coding_backend.domain.auth.repository;
+package com.be_senior.Haru_Coding_backend.repository;
 
-import com.be_senior.Haru_Coding_backend.domain.auth.entity.RefreshTokenEntity;
+import com.be_senior.Haru_Coding_backend.entity.RefreshTokenEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

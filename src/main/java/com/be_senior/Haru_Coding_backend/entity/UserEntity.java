@@ -1,4 +1,4 @@
-package com.be_senior.Haru_Coding_backend.domain.user.entity;
+package com.be_senior.Haru_Coding_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.Builder;

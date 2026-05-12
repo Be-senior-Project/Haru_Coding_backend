@@ -1,4 +1,4 @@
-package com.be_senior.Haru_Coding_backend.domain.auth.dto;
+package com.be_senior.Haru_Coding_backend.DTO;
 
 import lombok.Builder;
 import lombok.Getter;

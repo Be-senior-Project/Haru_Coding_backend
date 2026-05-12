@@ -1,10 +1,10 @@
-package com.be_senior.Haru_Coding_backend.domain.auth.controller;
+package com.be_senior.Haru_Coding_backend.controller;
 
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.GoogleLoginRequest;
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginRequest;
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginResponse;
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.SignupRequest;
-import com.be_senior.Haru_Coding_backend.domain.auth.service.AuthService;
+import com.be_senior.Haru_Coding_backend.DTO.GoogleLoginRequest;
+import com.be_senior.Haru_Coding_backend.DTO.LoginDto;
+import com.be_senior.Haru_Coding_backend.DTO.LoginResponse;
+import com.be_senior.Haru_Coding_backend.DTO.SignupDto;
+import com.be_senior.Haru_Coding_backend.service.AuthService;
 import com.be_senior.Haru_Coding_backend.global.jwt.JwtProvider;
 import com.be_senior.Haru_Coding_backend.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -26,12 +26,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ApiResponse<LoginResponse> signup(@RequestBody @Valid SignupRequest dto) {
+    public ApiResponse<LoginResponse> signup(@RequestBody @Valid SignupDto dto) {
         return ApiResponse.success(authService.signup(dto));
     }
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@RequestBody @Valid LoginRequest dto) {
+    public ApiResponse<LoginResponse> login(@RequestBody @Valid LoginDto dto) {
         return ApiResponse.success(authService.login(dto));
     }
 

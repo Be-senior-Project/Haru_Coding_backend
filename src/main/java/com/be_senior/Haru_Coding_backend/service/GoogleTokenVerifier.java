@@ -1,4 +1,4 @@
-package com.be_senior.Haru_Coding_backend.domain.auth.service;
+package com.be_senior.Haru_Coding_backend.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;

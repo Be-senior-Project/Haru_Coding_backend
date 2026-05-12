@@ -1,13 +1,13 @@
-package com.be_senior.Haru_Coding_backend.domain.auth.service;
+package com.be_senior.Haru_Coding_backend.service;
 
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginRequest;
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.LoginResponse;
-import com.be_senior.Haru_Coding_backend.domain.auth.dto.SignupRequest;
-import com.be_senior.Haru_Coding_backend.domain.auth.entity.RefreshTokenEntity;
-import com.be_senior.Haru_Coding_backend.domain.auth.repository.RefreshTokenRepository;
-import com.be_senior.Haru_Coding_backend.domain.auth.service.GoogleTokenVerifier.GoogleUserInfo;
-import com.be_senior.Haru_Coding_backend.domain.user.entity.UserEntity;
-import com.be_senior.Haru_Coding_backend.domain.user.repository.UserRepository;
+import com.be_senior.Haru_Coding_backend.DTO.LoginDto;
+import com.be_senior.Haru_Coding_backend.DTO.LoginResponse;
+import com.be_senior.Haru_Coding_backend.DTO.SignupDto;
+import com.be_senior.Haru_Coding_backend.entity.RefreshTokenEntity;
+import com.be_senior.Haru_Coding_backend.repository.RefreshTokenRepository;
+import com.be_senior.Haru_Coding_backend.service.GoogleTokenVerifier.GoogleUserInfo;
+import com.be_senior.Haru_Coding_backend.entity.UserEntity;
+import com.be_senior.Haru_Coding_backend.repository.UserRepository;
 import com.be_senior.Haru_Coding_backend.global.exception.CustomException;
 import com.be_senior.Haru_Coding_backend.global.exception.ErrorCode;
 import com.be_senior.Haru_Coding_backend.global.jwt.JwtProvider;
@@ -25,7 +25,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtProvider jwtProvider;
-    private final GoogleTokenVerifier googleTokenVerifier;
+    private final com.be_senior.Haru_Coding_backend.service.GoogleTokenVerifier googleTokenVerifier;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Transactional
@@ -46,7 +46,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse signup(SignupRequest dto) {
+    public LoginResponse signup(SignupDto dto) {
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
@@ -66,7 +66,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse login(LoginRequest dto) {
+    public LoginResponse login(LoginDto dto) {
         UserEntity user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
