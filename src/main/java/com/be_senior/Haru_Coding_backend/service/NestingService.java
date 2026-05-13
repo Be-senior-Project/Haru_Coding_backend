@@ -10,23 +10,27 @@ import java.util.List;
 public class NestingService {
 
     public NestingResponseDto format(NestingRequestDto request) {
+        int maxWidth = request.calcMaxWidth();
         String[] lines = request.getCode().split("\n", -1);
         List<String> result = new ArrayList<>();
         List<NestingResponseDto.ChangeInfo> changes = new ArrayList<>();
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
+            int depth = calcDepth(line, request.getIndentSize());
+            int indentSize = calcIndentSize(depth);
+            String normalized = normalizeLine(line, depth, indentSize);
 
-            if (line.length() <= request.getMaxWidth()) {
-                result.add(line);
+            if (normalized.length() <= maxWidth) {
+                result.add(normalized);
                 continue;
             }
 
-            String formatted = tryFormatLine(line, request.getMaxWidth());
+            String formatted = tryFormatLine(normalized, maxWidth, indentSize);
 
-            if (!formatted.equals(line)) {
-                String type = detectType(line.stripLeading());
-                int indentOffset = countLeadingSpaces(line) + getKeywordLength(type);
+            if (!formatted.equals(normalized)) {
+                String type = detectType(normalized.stripLeading());
+                int indentOffset = countLeadingSpaces(normalized) + getKeywordLength(type);
                 changes.add(new NestingResponseDto.ChangeInfo(i + 1, type, indentOffset));
             }
 
@@ -37,22 +41,45 @@ public class NestingService {
         return new NestingResponseDto("success", formattedCode, changes);
     }
 
-    private String tryFormatLine(String line, int maxWidth) {
+    // depth에 따라 indent 크기 결정
+    private int calcIndentSize(int depth) {
+        if (depth <= 1) return 4;
+        if (depth == 2) return 3;
+        return 2;
+    }
+
+    // 현재 라인의 depth 계산 (기존 indentSize 기준)
+    private int calcDepth(String line, int baseIndentSize) {
+        int spaces = countLeadingSpaces(line);
+        return spaces / baseIndentSize;
+    }
+
+    // depth에 맞게 들여쓰기 재조정
+    private String normalizeLine(String line, int depth, int indentSize) {
+        String trimmed = line.stripLeading();
+        int totalIndent = 0;
+        for (int i = 1; i <= depth; i++) {
+            totalIndent += calcIndentSize(i);
+        }
+        return " ".repeat(totalIndent) + trimmed;
+    }
+
+    private String tryFormatLine(String line, int maxWidth, int indentSize) {
         String trimmed = line.stripLeading();
         String lead = line.substring(0, line.length() - trimmed.length());
 
         if (trimmed.matches("if\\s*\\(.*\\)\\s*\\{.*")) {
-            return formatIfStatement(line, lead, trimmed);
+            return formatIfStatement(line, lead, trimmed, indentSize);
         }
 
         if (trimmed.matches("for\\s*\\(.*\\)\\s*\\{.*")) {
-            return formatForStatement(line, lead, trimmed);
+            return formatForStatement(line, lead, trimmed, indentSize);
         }
 
         return line;
     }
 
-    private String formatIfStatement(String original, String lead, String trimmed) {
+    private String formatIfStatement(String original, String lead, String trimmed, int indentSize) {
         int openParen = trimmed.indexOf('(');
         if (openParen < 0) return original;
 
@@ -66,7 +93,7 @@ public class NestingService {
         if (parts.size() <= 1) return original;
 
         String keyword = trimmed.substring(0, openParen).stripTrailing();
-        String alignPad = lead + " ".repeat(keyword.length() + 2);
+        String alignPad = lead + " ".repeat(indentSize);
 
         List<String> formatted = new ArrayList<>();
         formatted.add(lead + keyword + " (" + parts.get(0));
@@ -80,7 +107,7 @@ public class NestingService {
         return String.join("\n", formatted);
     }
 
-    private String formatForStatement(String original, String lead, String trimmed) {
+    private String formatForStatement(String original, String lead, String trimmed, int indentSize) {
         int openParen = trimmed.indexOf('(');
         if (openParen < 0) return original;
 
@@ -93,7 +120,7 @@ public class NestingService {
         List<String> segs = splitAtSemicolons(inner);
         if (segs.size() != 3) return original;
 
-        String alignPad = lead + " ".repeat("for (".length());
+        String alignPad = lead + " ".repeat(indentSize);
 
         return lead + "for (" + segs.get(0).trim() + ";\n" +
                 alignPad + segs.get(1).trim() + ";\n" +

@@ -27,7 +27,7 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/google", "/api/auth/refresh", "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/google", "/api/auth/refresh", "/api/auth/signup", "/api/auth/login", "/v1/nesting/**", "/", "/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
 
