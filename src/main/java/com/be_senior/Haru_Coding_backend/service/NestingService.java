@@ -18,8 +18,8 @@ public class NestingService {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             int depth = calcDepth(line, request.getIndentSize());
-            int indentSize = calcIndentSize(depth);
-            String normalized = normalizeLine(line, depth, indentSize);
+            int indentSize = calcIndentSize(depth, maxWidth);
+            String normalized = normalizeLine(line, depth, indentSize, maxWidth);
 
             if (normalized.length() <= maxWidth) {
                 result.add(normalized);
@@ -37,48 +37,53 @@ public class NestingService {
             result.add(formatted);
         }
 
-        String formattedCode = String.join("\n", result);
-        return new NestingResponseDto("success", formattedCode, changes);
-    }
-
-    // depth에 따라 indent 크기 결정
-    private int calcIndentSize(int depth) {
-        if (depth <= 1) return 4;
-        if (depth == 2) return 3;
-        return 2;
-    }
-
-    // 현재 라인의 depth 계산 (기존 indentSize 기준)
-    private int calcDepth(String line, int baseIndentSize) {
-        int spaces = countLeadingSpaces(line);
-        return spaces / baseIndentSize;
-    }
-
-    // depth에 맞게 들여쓰기 재조정
-    private String normalizeLine(String line, int depth, int indentSize) {
-        String trimmed = line.stripLeading();
-        int totalIndent = 0;
-        for (int i = 1; i <= depth; i++) {
-            totalIndent += calcIndentSize(i);
-        }
-        return " ".repeat(totalIndent) + trimmed;
+        return new NestingResponseDto("success", String.join("\n", result), changes);
     }
 
     private String tryFormatLine(String line, int maxWidth, int indentSize) {
         String trimmed = line.stripLeading();
         String lead = line.substring(0, line.length() - trimmed.length());
 
+        // if문
         if (trimmed.matches("if\\s*\\(.*\\)\\s*\\{.*")) {
             return formatIfStatement(line, lead, trimmed, indentSize);
         }
 
+        // for문
         if (trimmed.matches("for\\s*\\(.*\\)\\s*\\{.*")) {
             return formatForStatement(line, lead, trimmed, indentSize);
+        }
+
+        // 메서드 시그니처
+        if (trimmed.matches("(public|private|protected).*\\(.*,.*\\).*\\{.*")) {
+            return formatMethodSignature(line, lead, trimmed);
+        }
+
+        // + 연결
+        if (trimmed.contains("+") && !trimmed.contains("+=")) {
+            String concat = formatConcatenation(line, lead, trimmed);
+            if (!concat.equals(line)) return concat;
+        }
+
+        // while문
+        if (trimmed.matches("while\\s*\\(.*\\)\\s*\\{.*")) {
+            return formatWhileStatement(line, lead, trimmed, indentSize);
+        }
+
+        // 삼항 연산자
+        if (trimmed.contains("?") && trimmed.contains(":")) {
+            String ternary = formatTernary(line, lead, trimmed);
+            if (!ternary.equals(line)) return ternary;
         }
 
         return line;
     }
 
+    // if (condA && condB && condC) {
+    // →
+    // if (condA
+    //     && condB
+    //     && condC) {
     private String formatIfStatement(String original, String lead, String trimmed, int indentSize) {
         int openParen = trimmed.indexOf('(');
         if (openParen < 0) return original;
@@ -101,12 +106,17 @@ public class NestingService {
             formatted.add(alignPad + parts.get(i));
         }
 
-        String lastLine = formatted.remove(formatted.size() - 1);
-        formatted.add(lastLine + ") " + suffix);
+        String last = formatted.remove(formatted.size() - 1);
+        formatted.add(last + ") " + suffix);
 
         return String.join("\n", formatted);
     }
 
+    // for (init; condition; update) {
+    // →
+    // for (init;
+    //      condition;
+    //      update) {
     private String formatForStatement(String original, String lead, String trimmed, int indentSize) {
         int openParen = trimmed.indexOf('(');
         if (openParen < 0) return original;
@@ -127,6 +137,39 @@ public class NestingService {
                 alignPad + segs.get(2).trim() + ") " + suffix;
     }
 
+    // public void method(ParamA a, ParamB b, ParamC c) {
+    // →
+    // public void method(ParamA a,
+    //                    ParamB b,
+    //                    ParamC c) {
+    private String formatMethodSignature(String original, String lead, String trimmed) {
+        int openParen = trimmed.indexOf('(');
+        if (openParen < 0) return original;
+
+        int closeParen = findMatchingCloseParen(trimmed, openParen);
+        if (closeParen < 0) return original;
+
+        String beforeParen = trimmed.substring(0, openParen + 1);
+        String params = trimmed.substring(openParen + 1, closeParen);
+        String suffix = trimmed.substring(closeParen + 1).stripLeading();
+
+        List<String> parts = splitAtCommas(params);
+        if (parts.size() <= 1) return original;
+
+        // "(" 다음 위치에 맞춰 정렬
+        String alignPad = lead + " ".repeat(beforeParen.length());
+
+        List<String> formatted = new ArrayList<>();
+        formatted.add(lead + beforeParen + parts.get(0) + ",");
+        for (int i = 1; i < parts.size() - 1; i++) {
+            formatted.add(alignPad + parts.get(i) + ",");
+        }
+        formatted.add(alignPad + parts.get(parts.size() - 1) + ") " + suffix);
+
+        return String.join("\n", formatted);
+    }
+
+    // && || 기준 분리 (괄호 depth 0만)
     private List<String> splitAtLogicalOperators(String condition) {
         List<String> parts = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -160,6 +203,35 @@ public class NestingService {
         return parts;
     }
 
+    // , 기준 분리 (괄호, 제네릭 <> depth 0만)
+    private List<String> splitAtCommas(String s) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int parenDepth = 0;
+        int angleDepth = 0;
+
+        for (char ch : s.toCharArray()) {
+            if (ch == '(' || ch == '[') parenDepth++;
+            else if (ch == ')' || ch == ']') parenDepth--;
+            else if (ch == '<') angleDepth++;
+            else if (ch == '>') angleDepth--;
+
+            if (ch == ',' && parenDepth == 0 && angleDepth == 0) {
+                parts.add(current.toString().trim());
+                current = new StringBuilder();
+            } else {
+                current.append(ch);
+            }
+        }
+
+        if (!current.toString().isBlank()) {
+            parts.add(current.toString().trim());
+        }
+
+        return parts;
+    }
+
+    // ; 기준 분리 (괄호 depth 0만)
     private List<String> splitAtSemicolons(String s) {
         List<String> parts = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -196,6 +268,32 @@ public class NestingService {
         return -1;
     }
 
+    private int calcIndentSize(int depth, int maxWidth) {
+        if (maxWidth >= 70) {
+            return 4;
+        }
+        if (maxWidth >= 55) {
+            return depth <= 2 ? 4 : 2;
+        }
+        // 좁은 화면 → 최소 1칸
+        if (depth <= 1) return 4;
+        if (depth == 2) return 3;
+        if (depth == 3) return 2;
+        return 1;  // depth 4 이상은 1칸
+    }
+
+    private int calcDepth(String line, int baseIndentSize) {
+        return countLeadingSpaces(line) / baseIndentSize;
+    }
+
+    private String normalizeLine(String line, int depth, int indentSize, int maxWidth) {
+        String trimmed = line.stripLeading();
+        int totalIndent = 0;
+        for (int i = 1; i <= depth; i++) {
+            totalIndent += calcIndentSize(i, maxWidth);  // maxWidth 추가
+        }
+        return " ".repeat(totalIndent) + trimmed;
+    }
     private int countLeadingSpaces(String line) {
         int count = 0;
         for (char ch : line.toCharArray()) {
@@ -209,6 +307,7 @@ public class NestingService {
         if (trimmed.startsWith("if")) return "if_wrap";
         if (trimmed.startsWith("for")) return "for_wrap";
         if (trimmed.startsWith("while")) return "while_wrap";
+        if (trimmed.matches("(public|private|protected).*")) return "method_wrap";
         return "unknown";
     }
 
@@ -220,4 +319,180 @@ public class NestingService {
             default -> 0;
         };
     }
+
+    private String formatConcatenation(String original, String lead, String trimmed) {
+
+        // 케이스 1: 메서드 호출 안에 + 가 있는 경우
+        int openParen = trimmed.indexOf('(');
+        if (openParen >= 0) {
+            int closeParen = findMatchingCloseParen(trimmed, openParen);
+            if (closeParen >= 0) {
+                String inner = trimmed.substring(openParen + 1, closeParen);
+                List<String> parts = splitAtPlus(inner);
+
+                if (parts.size() > 1) {
+                    String beforeParen = trimmed.substring(0, openParen + 1);
+                    String suffix = trimmed.substring(closeParen);
+                    String alignPad = lead + " ".repeat(beforeParen.length());
+
+                    List<String> formatted = new ArrayList<>();
+                    formatted.add(lead + beforeParen + parts.get(0));
+                    for (int i = 1; i < parts.size(); i++) {
+                        formatted.add(alignPad + parts.get(i));
+                    }
+                    formatted.set(
+                            formatted.size() - 1,
+                            formatted.get(formatted.size() - 1) + suffix
+                    );
+
+                    return String.join("\n", formatted);
+                }
+            }
+        }
+
+        // 케이스 2: 대입문에 + 가 있는 경우
+        int eqIdx = trimmed.indexOf('=');
+        if (eqIdx >= 0
+                && eqIdx < trimmed.length() - 1
+                && trimmed.charAt(eqIdx - 1) != '!'
+                && trimmed.charAt(eqIdx - 1) != '<'
+                && trimmed.charAt(eqIdx - 1) != '>'
+                && trimmed.charAt(eqIdx + 1) != '=') {
+
+            String beforeEq = trimmed.substring(0, eqIdx + 2);
+            String afterEq = trimmed.substring(eqIdx + 2).stripLeading();
+
+            List<String> parts = splitAtPlus(afterEq);
+            if (parts.size() > 1) {
+                String alignPad = lead + " ".repeat(beforeEq.length());
+
+                List<String> formatted = new ArrayList<>();
+                formatted.add(lead + beforeEq + parts.get(0));
+                for (int i = 1; i < parts.size(); i++) {
+                    formatted.add(alignPad + parts.get(i));
+                }
+                return String.join("\n", formatted);
+            }
+        }
+
+        return original;
+    }
+
+    private List<String> splitAtPlus(String s) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        int i = 0;
+
+        while (i < s.length()) {
+            char ch = s.charAt(i);
+            if (ch == '(' || ch == '[') depth++;
+            else if (ch == ')' || ch == ']') depth--;
+
+            if (ch == '+' && depth == 0) {
+                // ++ 증감연산자는 무시
+                if (i + 1 < s.length() && s.charAt(i + 1) == '+') {
+                    current.append("++");
+                    i += 2;
+                    continue;
+                }
+                // += 는 무시
+                if (i + 1 < s.length() && s.charAt(i + 1) == '=') {
+                    current.append("+=");
+                    i += 2;
+                    continue;
+                }
+                parts.add(current.toString().stripTrailing());
+                current = new StringBuilder("+ ");
+                i++;
+                while (i < s.length() && s.charAt(i) == ' ') i++;
+                continue;
+            }
+
+            current.append(ch);
+            i++;
+        }
+
+        if (!current.toString().isBlank()) {
+            parts.add(current.toString().stripTrailing());
+        }
+
+        return parts;
+    }
+
+
+    // while (condA && condB) {
+// →
+// while (condA
+//        && condB) {
+    private String formatWhileStatement(String original, String lead, String trimmed, int indentSize) {
+        int openParen = trimmed.indexOf('(');
+        if (openParen < 0) return original;
+
+        int closeParen = findMatchingCloseParen(trimmed, openParen);
+        if (closeParen < 0) return original;
+
+        String condition = trimmed.substring(openParen + 1, closeParen);
+        String suffix = trimmed.substring(closeParen + 1).stripLeading();
+
+        List<String> parts = splitAtLogicalOperators(condition);
+        if (parts.size() <= 1) return original;
+
+        String alignPad = lead + " ".repeat(indentSize);
+
+        List<String> formatted = new ArrayList<>();
+        formatted.add(lead + "while (" + parts.get(0));
+        for (int i = 1; i < parts.size(); i++) {
+            formatted.add(alignPad + parts.get(i));
+        }
+
+        String last = formatted.remove(formatted.size() - 1);
+        formatted.add(last + ") " + suffix);
+
+        return String.join("\n", formatted);
+    }
+
+    // String result = condition ? "A" : "B";
+// →
+// String result = condition
+//               ? "A"
+//               : "B";
+    private String formatTernary(String original, String lead, String trimmed) {
+        int eqIdx = trimmed.indexOf('=');
+        if (eqIdx < 0 || trimmed.charAt(eqIdx + 1) == '=') return original;
+
+        int questionIdx = -1;
+        int colonIdx = -1;
+        int depth = 0;
+
+        for (int i = eqIdx; i < trimmed.length(); i++) {
+            char ch = trimmed.charAt(i);
+            if (ch == '(' || ch == '[') depth++;
+            else if (ch == ')' || ch == ']') depth--;
+
+            if (depth == 0 && ch == '?' && questionIdx < 0) {
+                questionIdx = i;
+            }
+            if (depth == 0 && ch == ':' && questionIdx >= 0) {
+                colonIdx = i;
+                break;
+            }
+        }
+
+        if (questionIdx < 0 || colonIdx < 0) return original;
+
+        String beforeQuestion = trimmed.substring(0, questionIdx).stripTrailing();
+        String truePart = trimmed.substring(questionIdx + 1, colonIdx).trim();
+        String falsePart = trimmed.substring(colonIdx + 1).trim();
+
+        // = 다음 위치에 맞춰 정렬
+        String alignPad = lead + " ".repeat(eqIdx + 2);
+
+        return lead + beforeQuestion + "\n" +
+                alignPad + "? " + truePart + "\n" +
+                alignPad + ": " + falsePart;
+    }
 }
+
+
+

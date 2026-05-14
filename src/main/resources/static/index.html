@@ -142,6 +142,12 @@
         <input type="number" id="screenWidth" value="390">
         px
     </label>
+
+    <label>
+        패딩
+        <input type="number" id="padding" value="32">
+        px
+    </label>
 </div>
 
 <div class="section-title">결과</div>
@@ -161,14 +167,16 @@
     async function format() {
         const code = document.getElementById('input').value;
         const screenWidth = parseInt(document.getElementById('screenWidth').value);
+        const padding = parseInt(document.getElementById('padding').value);
 
         const res = await fetch('/v1/nesting/format', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 code,
-                screenWidth,
-                fontSize: currentFontSize
+                screenWidth: window.innerWidth,  // 크롬 현재 너비 자동으로 읽음
+                fontSize: currentFontSize,
+                padding
             })
         });
 
