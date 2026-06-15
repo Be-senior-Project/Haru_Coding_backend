@@ -1,6 +1,7 @@
 package com.besenior.harucoding.DTO;
 
 import com.besenior.harucoding.entity.User;
+import com.besenior.harucoding.global.enums.LeagueTier;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,6 +19,7 @@ public class UserProfileResponse {
     private long correctCount;
     private double accuracyRate;
     private String preferredLanguage;
+    private String tier;   // 리그 티어. 리그 점수 시스템 전까지는 기본 BRONZE
 
     public static UserProfileResponse from(User user, long totalSolved, long correctCount) {
         double accuracy = totalSolved == 0 ? 0.0
@@ -34,6 +36,7 @@ public class UserProfileResponse {
                 .correctCount(correctCount)
                 .accuracyRate(accuracy)
                 .preferredLanguage(user.getPreferredLanguage())
+                .tier(LeagueTier.BRONZE.name())
                 .build();
     }
 }

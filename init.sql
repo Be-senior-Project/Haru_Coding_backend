@@ -71,8 +71,7 @@ CREATE TABLE IF NOT EXISTS problems (
     category            VARCHAR(100)    NOT NULL,                     -- seed의 Category
     subcategory         VARCHAR(100),                                -- seed의 Subcategory (nullable)
     difficulty          INT             NOT NULL CHECK (difficulty IN (0,1,2)),
-    language            VARCHAR(20)     NOT NULL
-        CHECK (language IN ('Python','Java','C++')),
+    language            VARCHAR(20)     NOT NULL,                     -- 'Python','Java','C++' 등 (AI 생성값 다양성 고려해 CHECK 미적용)
     title               VARCHAR(255)    NOT NULL,
     description         TEXT            NOT NULL,
     constraints         JSONB,                                       -- 제약 조건 목록 (문자열 배열)
