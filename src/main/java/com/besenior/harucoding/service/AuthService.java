@@ -51,11 +51,12 @@ public class AuthService {
 
     @Transactional
     public LoginResponse signup(SignupRequest dto) {
-        if (userRepository.existsByEmailHash(encryptor.hash(dto.getEmail()))) {
-            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
+        // 비밀번호 일치는 입력값만으로 판단할 수 있으므로 DB 조회보다 먼저 확인한다.
         if (!dto.getPassword().equals(dto.getPasswordConfirm())) {
             throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+        }
+        if (userRepository.existsByEmailHash(encryptor.hash(dto.getEmail()))) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         User user = userRepository.save(

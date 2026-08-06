@@ -38,7 +38,10 @@ public class SecurityConfig {
                                 "/api/auth/logout",
                                 "/api/topics",
                                 "/api/problem-sets/today",
-                                "/v1/nesting/**"
+                                "/v1/nesting/**",
+                                // Spring이 처리하지 못한 예외를 /error 로 포워드할 때 인증에
+                                // 걸려 400/500이 403으로 둔갑하던 문제를 막는다.
+                                "/error"
                                 // /api/recommend/** 는 인증 필요로 변경.
                                 // 공개 상태에서는 바디의 userId만 믿고 온보딩 결과를 저장했기 때문에
                                 // 남의 userId를 넣어 온보딩 정보를 덮어쓸 수 있었다.

@@ -7,22 +7,30 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 회원가입 요청.
+ *
+ * 검증 문구는 그대로 사용자에게 노출되므로 한국어로 명시한다.
+ * (지정하지 않으면 "must not be blank" 같은 기본 영문 문구가 내려간다.)
+ * 필드 선언 순서 = 오류가 노출되는 우선순위: 이름 → 이메일 → 비밀번호 → 비밀번호 확인
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SignupRequest {
 
-    @NotBlank
-    @Email
-    private String email;
-
-    @NotBlank
+    @NotBlank(message = "이름을 입력해주세요.")
+    @Size(max = 20, message = "이름은 20자 이하로 입력해주세요.")
     private String nickname;
 
-    @NotBlank
-    @Size(min = 8)
+    @NotBlank(message = "이메일을 입력해주세요.")
+    @Email(message = "이메일 형식이 올바르지 않습니다.")
+    private String email;
+
+    @NotBlank(message = "비밀번호를 입력해주세요.")
+    @Size(min = 8, message = "비밀번호는 8자 이상 입력해주세요.")
     private String password;
 
-    @NotBlank
+    @NotBlank(message = "비밀번호 확인을 입력해주세요.")
     private String passwordConfirm;
 }
