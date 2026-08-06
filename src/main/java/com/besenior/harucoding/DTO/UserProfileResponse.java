@@ -19,6 +19,14 @@ public class UserProfileResponse {
     private double accuracyRate;
     private String preferredLanguage;
 
+    // ── 온보딩 상태 ────────────────────────────────────────────────
+    // 온보딩을 건너뛴 채로 앱을 쓰는 것을 막으려면 클라이언트가 "이 유저가 온보딩을
+    // 마쳤는지"를 알아야 한다. 서버는 값을 갖고 있었지만 내려주지 않고 있었다.
+    private String codingLevel;             // NONE / SOME / LOTS
+    private boolean cotePrepared;
+    private String recommendedDifficulty;   // 온보딩 미완료면 null
+    private boolean onboardingCompleted;    // recommendedDifficulty 존재 여부
+
     public static UserProfileResponse from(User user, long totalSolved, long correctCount) {
         double accuracy = totalSolved == 0 ? 0.0
                 : Math.round((double) correctCount / totalSolved * 1000) / 10.0;
@@ -34,6 +42,10 @@ public class UserProfileResponse {
                 .correctCount(correctCount)
                 .accuracyRate(accuracy)
                 .preferredLanguage(user.getPreferredLanguage())
+                .codingLevel(user.getCodingLevel())
+                .cotePrepared(user.isCotePrepared())
+                .recommendedDifficulty(user.getRecommendedDifficulty())
+                .onboardingCompleted(user.getRecommendedDifficulty() != null)
                 .build();
     }
 }

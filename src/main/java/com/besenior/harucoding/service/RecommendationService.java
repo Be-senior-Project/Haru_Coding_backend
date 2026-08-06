@@ -77,7 +77,8 @@ public class RecommendationService {
     );
 
     // ── 온보딩 추천 (신규 유저) ────────────────────────────────────
-    public RecommendationFilterDto recommendOnboarding(UserProfileDto profile) {
+    /** userId는 access token에서 온 값을 쓴다. 바디의 profile.userId는 신뢰하지 않는다. */
+    public RecommendationFilterDto recommendOnboarding(Long userId, UserProfileDto profile) {
         String codingLevel = normalizeCodingLevel(profile.getCodingLevel());
         OnboardingPreset preset = PRESETS.get(codingLevel + "|" + profile.isCotePrepared());
 
@@ -92,9 +93,11 @@ public class RecommendationService {
                 .method("preset")
                 .build();
 
-        // users 테이블에 온보딩 결과 저장
-        if (profile.getUserId() != null) {
-            userRepository.findById(profile.getUserId()).ifPresent(user -> {
+        // users 테이블에 온보딩 결과 저장.
+        // recommendedDifficulty가 채워지는 시점 = 온보딩 완료 시점이며,
+        // GET /api/users/me 의 onboardingCompleted 가 이 값을 근거로 계산된다.
+        if (userId != null) {
+            userRepository.findById(userId).ifPresent(user -> {
                 user.updateOnboarding(codingLevel, profile.isCotePrepared(), result.getDifficulty());
                 userRepository.save(user);
             });

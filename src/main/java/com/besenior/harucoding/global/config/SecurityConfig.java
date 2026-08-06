@@ -33,10 +33,15 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/google",
                                 "/api/auth/refresh",
+                                // 로그아웃은 access token이 만료된 뒤에도 서버 세션을 정리할 수
+                                // 있어야 하므로 통과시키고, 토큰 검증은 AuthService가 직접 한다.
+                                "/api/auth/logout",
                                 "/api/topics",
                                 "/api/problem-sets/today",
-                                "/v1/nesting/**",
-                                "/api/recommend/**"
+                                "/v1/nesting/**"
+                                // /api/recommend/** 는 인증 필요로 변경.
+                                // 공개 상태에서는 바디의 userId만 믿고 온보딩 결과를 저장했기 때문에
+                                // 남의 userId를 넣어 온보딩 정보를 덮어쓸 수 있었다.
                         ).permitAll()
                         // 문제 조회(GET)는 공개, 풀이 제출(POST)은 인증 필요
                         .requestMatchers(HttpMethod.GET, "/api/problems", "/api/problems/**").permitAll()
